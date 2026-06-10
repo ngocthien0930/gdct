@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="vi"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm tra Kiến thức Pháp luật</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; line-height: 1.6; color: #333; padding: 15px; background: #f4f4f9; margin: 0; }
+        .quiz-header { text-align: center; margin-bottom: 20px; color: #b71c1c; }
+        .question-card { background: #fff; padding: 15px; border-radius: 10px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .q-text { font-weight: bold; margin-bottom: 12px; color: #1a237e; font-size: 16px; }
+        .option { display: block; margin: 10px 0; padding: 12px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .option:active { background-color: #f0f0f0; }
+        input[type="radio"] { margin-right: 10px; transform: scale(1.2); }
+        
+        /* Màu sắc kết quả */
+        .correct { background-color: #d4edda !important; border-color: #28a745 !important; color: #155724; }
+        .wrong { background-color: #f8d7da !important; border-color: #dc3545 !important; color: #721c24; }
+        .not-selected { opacity: 0.6; }
+
+        #btn-submit { display: block; width: 100%; padding: 15px; background: #b71c1c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+        #btn-submit:disabled { background: #ccc; cursor: not-allowed; }
+        #result-box { text-align: center; font-size: 20px; font-weight: bold; margin-top: 20px; padding: 20px; border-radius: 10px; display: none; background: #fff; border: 2px solid #b71c1c; }
+    </style>
+</head>
+<body>
+
+<div class="quiz-header">
+    <h2 style="margin:0">TRẮC NGHIỆM PHÁP LUẬT</h2>
+</div>
+
+<div id="quiz-container"></div>
+
+<button id="btn-submit" onclick="showResult()">NỘP BÀI</button>
+
+<div id="result-box"></div>
+
+<script>
+    const bank = [
+        { q: "Quốc hội nước CHXHCN Việt Nam có nhiệm kỳ mấy năm?", a: ["3 năm", "4 năm", "5 năm", "6 năm"], c: 2 },
+        { q: "Cơ quan nào là cơ quan hành chính nhà nước cao nhất?", a: ["Quốc hội", "Chính phủ", "Tòa án nhân dân", "Viện kiểm sát"], c: 1 },
+        { q: "Hạn tuổi cao nhất của sĩ quan phục vụ tại ngũ ở cấp Úy là bao nhiêu?", a: ["46 tuổi", "48 tuổi", "51 tuổi", "53 tuổi"], c: 0 },
+        { q: "Luật Quốc phòng hiện hành được thông qua vào năm nào?", a: ["2015", "2018", "2020", "2022"], c: 1 },
+        { q: "Quân nhân chuyên nghiệp có mấy loại danh hiệu?", a: ["1 loại", "2 loại", "3 loại (Sơ cấp, Trung cấp, Cao cấp)", "4 loại"], c: 2 },
+        { q: "Ai là người Thống lĩnh lực lượng vũ trang nhân dân Việt Nam?", a: ["Thủ tướng", "Bộ trưởng Quốc phòng", "Chủ tịch nước", "Tổng Bí thư"], c: 2 },
+        { q: "Cấp bậc quân hàm cao nhất của Sĩ quan giữ chức vụ Trung đoàn trưởng là?", a: ["Thiếu tá", "Trung tá", "Thượng tá", "Đại tá"], c: 2 },
+        { q: "Ngày truyền thống của Quân đội nhân dân Việt Nam là ngày nào?", a: ["19/08", "02/09", "22/12", "30/04"], c: 2 },
+        { q: "Hệ thống chính quyền địa phương ở Việt Nam gồm mấy cấp?", a: ["2 cấp", "3 cấp", "4 cấp", "5 cấp"], c: 1 },
+        { q: "Đại tướng Quân đội nhân dân Việt Nam do ai bổ nhiệm, phong hàm?", a: ["Bộ trưởng Quốc phòng", "Thủ tướng", "Chủ tịch nước", "Quốc hội"], c: 2 },
+        { q: "Sĩ quan quân đội nhân dân Việt Nam là?", a: ["Công nhân quốc phòng", "Cán bộ của Đảng và Nhà nước", "Người lao động tự do", "Viên chức nhà nước"], c: 1 },
+        { q: "Luật Quân nhân chuyên nghiệp quy định tuổi nghỉ hưu của nam là bao nhiêu?", a: ["50 tuổi", "52 tuổi", "55 tuổi", "60 tuổi"], c: 2 },
+        { q: "Cơ quan nào có quyền sửa đổi Hiến pháp?", a: ["Chính phủ", "Quốc hội", "Chủ tịch nước", "Tòa án tối cao"], c: 1 },
+        { q: "Công dân nam đủ bao nhiêu tuổi thì được gọi nhập ngũ?", a: ["17 tuổi", "18 tuổi", "19 tuổi", "20 tuổi"], c: 1 },
+        { q: "Lực lượng dân quân tự vệ là lực lượng?", a: ["Vũ trang quần chúng", "Quân đội chính quy", "Công an nhân dân", "Cảnh sát biển"], c: 0 },
+        { q: "Chủ tịch nước do cơ quan nào bầu ra?", a: ["Nhân dân bầu", "Chính phủ bầu", "Quốc hội bầu", "Đảng bầu"], c: 2 },
+        { q: "Ủy ban thường vụ Quốc hội là cơ quan?", a: ["Lãnh đạo Đảng", "Thường trực của Quốc hội", "Hành pháp", "Tư pháp"], c: 1 },
+        { q: "Mọi công dân đều bình đẳng trước pháp luật là quy định của?", a: ["Luật dân sự", "Luật hình sự", "Hiến pháp", "Luật quốc phòng"], c: 2 },
+        { q: "Hành vi trốn tránh nghĩa vụ quân sự bị xử lý thế nào?", a: ["Chỉ nhắc nhở", "Xử phạt hành chính hoặc hình sự", "Không bị xử lý", "Phạt lao động công ích"], c: 1 },
+        { q: "Bộ trưởng Bộ Quốc phòng do ai phê chuẩn bổ nhiệm?", a: ["Tổng bí thư", "Chủ tịch nước", "Quốc hội", "Thủ tướng"], c: 2 }
+    ];
+
+    let selectedQuestions = [];
+
+    function init() {
+        // Xáo trộn và lấy 10 câu
+        selectedQuestions = bank.sort(() => 0.5 - Math.random()).slice(0, 10);
+        const html = selectedQuestions.map((item, index) => `
+            <div class="question-card" id="card-${index}">
+                <div class="q-text">Câu ${index + 1}: ${item.q}</div>
+                ${item.a.map((opt, i) => `
+                    <label class="option" id="label-${index}-${i}">
+                        <input type="radio" name="q${index}" value="${i}"> ${opt}
+                    </label>
+                `).join('')}
+            </div>
+        `).join('');
+        document.getElementById('quiz-container').innerHTML = html;
+    }
+
+    function showResult() {
+        let score = 0;
+        selectedQuestions.forEach((item, index) => {
+            const selected = document.querySelector(`input[name="q${index}"]:checked`);
+            const correctIdx = item.c;
+            
+            // Hiện đáp án đúng (Màu xanh)
+            document.getElementById(`label-${index}-${correctIdx}`).classList.add('correct');
+
+            if (selected) {
+                const userVal = parseInt(selected.value);
+                if (userVal === correctIdx) {
+                    score++;
+                } else {
+                    // Nếu chọn sai, hiện màu đỏ tại câu đã chọn
+                    document.getElementById(`label-${index}-${userVal}`).classList.add('wrong');
+                }
+            }
+            
+            // Vô hiệu hóa các nút sau khi nộp
+            const radios = document.getElementsByName(`q${index}`);
+            radios.forEach(r => r.disabled = true);
+        });
+
+        const resBox = document.getElementById('result-box');
+        resBox.style.display = 'block';
+        resBox.innerHTML = `KẾT QUẢ: ${score}/10 ĐIỂM <br> 
+        <span style="font-size:14px; font-weight:normal;">(Bạn có thể kéo lên để xem đáp án đúng màu xanh)</span>`;
+        
+        document.getElementById('btn-submit').disabled = true;
+        window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    init();
+</script>
+
+</body>
+</html>

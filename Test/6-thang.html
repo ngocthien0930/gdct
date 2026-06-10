@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Kiểm Tra Trắc Nghiệm</title>
+    <style>
+        :root {
+            --primary-color: #b71c1c; 
+            --success-color: #2f855a;
+            --error-color: #c53030;
+            --bg-color: #f0f2f5;      
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #1c1e21;
+        }
+
+        .container {
+            max-width: 500px; 
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+        }
+
+        #timer {
+            text-align: right;
+            font-size: 14px;
+            color: #65676b;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .question-block {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e4e6eb;
+        }
+
+        .question-text {
+            font-weight: 600;
+            font-size: 17px;
+            margin-bottom: 15px;
+        }
+
+        .options-list {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .option-item {
+            display: block;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border: 1px solid #e4e6eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .option-item:hover {
+            background: #e7f3ff;
+            border-color: #0064d1;
+        }
+
+        .option-item input {
+            margin-right: 12px;
+            transform: scale(1.2);
+        }
+
+        .result-box {
+            background-color: #ebf8ff;
+            border: 1px solid #bee3f8;
+            padding: 20px;
+            border-radius: 6px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .correct {
+            background-color: #c6f6d5 !important;
+            border-color: var(--success-color) !important;
+            font-weight: bold;
+        }
+
+        .incorrect {
+            background-color: #fed7d7 !important;
+            border-color: var(--error-color) !important;
+        }
+
+        .btn-submit {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-submit:hover {
+            background-color: #8e1616;
+        }
+        
+        .note {
+            font-style: italic;
+            color: #718096;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>BÀI KIỂM TRA TRẮC NGHIỆM</h2>
+    <div id="timer">Thời gian làm bài: <span id="time">0</span> giây</div>
+    
+    <div id="quiz-wrapper">
+        </div>
+</div>
+
+<script>
+// Ngân hàng 05 câu hỏi gốc
+const questionBank = [
+    {
+        id: 1,
+        question: "Ngôn ngữ nào định dạng phong cách (style) cho trang web?",
+        options: { A: "HTML", B: "CSS", C: "JavaScript", D: "Python" },
+        answer: "B"
+    },
+    {
+        id: 2,
+        question: "Đâu không phải là một trình duyệt web?",
+        options: { A: "Google Chrome", B: "Mozilla Firefox", C: "Microsoft Edge", D: "Windows 11" },
+        answer: "D"
+    },
+    {
+        id: 3,
+        question: "Trong HTML, thẻ nào dùng để tạo một liên kết (hyperlink)?",
+        options: { A: "link", B: "href", C: "a", D: "url" },
+        answer: "C"
+    },
+    {
+        id: 4,
+        question: "CSS viết tắt của cụm từ nào sau đây?",
+        options: { A: "Cascading Style Sheets", B: "Computer Style Sheets", C: "Creative Style Sheets", D: "Colorful Style Sheets" },
+        answer: "A"
+    },
+    {
+        id: 5,
+        question: "Ký hiệu nào dùng để đại diện cho ID trong CSS selector?",
+        options: { A: ".", B: "#", C: "$", D: "*" },
+        answer: "B"
+    }
+];
+
+let seconds = 0;
+let timerInterval = null;
+
+function startTimer(initialSeconds = 0) {
+    seconds = initialSeconds;
+    document.getElementById('time').innerText = seconds;
+    timerInterval = setInterval(() => {
+        seconds++;
+        document.getElementById('time').innerText = seconds;
+        // Liên tục cập nhật thời gian đang làm vào bộ nhớ đề phòng F5 đột ngột
+        if (currentExam && !currentExam.isSubmitted) {
+            currentExam.elapsedSeconds = seconds;
+            localStorage.setItem('user_exam_session', JSON.stringify(currentExam));
+        }
+    }, 1000);
+}
+
+// Gọi dữ liệu từ bộ nhớ của trình duyệt
+let currentExam = JSON.parse(localStorage.getItem('user_exam_session'));
+
+function shuffleArray(array) {
+    let arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function generateExam() {
+    const shuffled = shuffleArray(questionBank);
+    return shuffled.slice(0, 3);
+}
+
+// 1. GIAO DIỆN LÀM BÀI (Chưa nộp bài)
+function renderQuizForm(questions) {
+    const wrapper = document.getElementById('quiz-wrapper');
+    let html = '<form id="quiz-form">';
+    
+    questions.forEach((q, index) => {
+        html += `
+            <div class="question-block" data-qid="${q.id}">
+                <div class="question-text">Câu ${index + 1}: ${q.question}</div>
+                <ul class="options-list">
+        `;
+        for (const [key, value] of Object.entries(q.options)) {
+            html += `
+                <label class="option-item">
+                    <input type="radio" name="question-${q.id}" value="${key}" required>
+                    <span>${key}. ${value}</span>
+                </label>
+            `;
+        }
+        html += `</ul></div>`;
+    });
+    
+    html += `
+        <button type="submit" class="btn-submit">NỘP BÀI</button>
+        <p class="note">* Lưu ý: Mỗi người chỉ được tham gia sát hạch 01 lần duy nhất.</p>
+        </form>
+    `;
+    wrapper.innerHTML = html;
+
+    // Chạy đếm giờ nối tiếp (nếu có số giây cũ do F5) hoặc chạy từ 0
+    startTimer(currentExam.elapsedSeconds || 0);
+
+    document.getElementById('quiz-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitQuiz(questions);
+    });
+}
+
+// HÀM XỬ LÝ NỘP BÀI
+function submitQuiz(questions) {
+    clearInterval(timerInterval); // Dừng đếm giờ
+
+    const form = document.getElementById('quiz-form');
+    let score = 0;
+    const userAnswers = {};
+
+    questions.forEach(q => {
+        const selected = form.querySelector(`input[name="question-${q.id}"]:checked`);
+        const ans = selected ? selected.value : null;
+        userAnswers[q.id] = ans;
+        
+        if (ans === q.answer) {
+            score++;
+        }
+    });
+
+    const durationMinutes = (seconds / 60).toFixed(2);
+    const resultString = score + "/" + questions.length;
+
+    // KHÓA CHẾT DỮ LIỆU VÀO LOCALSTORAGE
+    const sessionData = {
+        isSubmitted: true,
+        score: score,
+        total: questions.length,
+        questions: questions,
+        userAnswers: userAnswers,
+        finalDuration: seconds
+    };
+    localStorage.setItem('user_exam_session', JSON.stringify(sessionData));
+
+    // Bắn gói tin JSON về Flutter
+    const data = {
+        score: resultString,
+        duration: durationMinutes
+    };
+
+    if (window.TestChannel) {
+        window.TestChannel.postMessage(JSON.stringify(data));
+    }
+
+    // Chuyển sang màn hình kết quả ngay lập tức không hiện alert box
+    renderResult(sessionData);
+}
+
+// 2. GIAO DIỆN XEM LẠI ĐIỂM VÀ KẾT QUẢ (Khi nộp xong hoặc khi vào lại sau này)
+function renderResult(session) {
+    // Khóa chết số giây hiển thị trên thanh đếm giờ thực tế đã làm
+    document.getElementById('time').innerText = session.finalDuration || 0;
+
+    const wrapper = document.getElementById('quiz-wrapper');
+    let html = `
+        <div class="result-box">
+            <h3>Kết quả bài thi của bạn</h3>
+            <div class="score">Điểm số: ${session.score} / ${session.total}</div>
+        </div>
+        <h3>Chi tiết đáp án:</h3>
+    `;
+
+    session.questions.forEach((q, index) => {
+        const userAns = session.userAnswers[q.id];
+        const correctAns = q.answer;
+
+        html += `
+            <div class="question-block">
+                <div class="question-text">Câu ${index + 1}: ${q.question}</div>
+                <ul class="options-list">
+        `;
+
+        for (const [key, value] of Object.entries(q.options)) {
+            let statusClass = '';
+            if (key === correctAns) {
+                statusClass = 'correct'; // Đáp án đúng hiện nền xanh lá
+            } else if (key === userAns && userAns !== correctAns) {
+                statusClass = 'incorrect'; // Người học chọn sai hiện nền đỏ nhạt
+            }
+
+            const isChecked = key === userAns ? 'checked' : '';
+
+            html += `
+                <li class="option-item ${statusClass}">
+                    <input type="radio" disabled ${isChecked}>
+                    <span>${key}. ${value} ${key === correctAns ? ' ✓ (Đáp án đúng)' : ''}</span>
+                </li>
+            `;
+        }
+        html += `</ul></div>`;
+    });
+
+    wrapper.innerHTML = html;
+}
+
+// --- LUỒNG ĐIỀU KHIỂN CHÍNH (ONLOAD KHỞI CHẠY) ---
+if (currentExam && currentExam.isSubmitted === true) {
+    // THOÁT RA VÀO LẠI: Nhảy thẳng vào đây, không cho làm bài, chỉ xem kết quả
+    renderResult(currentExam);
+} else {
+    // TẢI LẠI HOẶC CHƯA THI XONG: Giữ nguyên bộ đề cũ và thời gian cũ đang làm để làm tiếp
+    if (!currentExam) {
+        const newExamQuestions = generateExam();
+        currentExam = {
+            isSubmitted: false,
+            questions: newExamQuestions,
+            elapsedSeconds: 0
+        };
+        localStorage.setItem('user_exam_session', JSON.stringify(currentExam));
+    }
+    renderQuizForm(currentExam.questions);
+}
+</script>
+
+</body>
+</html>
